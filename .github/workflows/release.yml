@@ -1,0 +1,35 @@
+name: Build and release
+
+# Runs when you publish a release on GitHub (Releases > Draft a new release),
+# builds ctrlit-lan.exe on a clean Windows machine and attaches it to that release.
+# "Run workflow" on the Actions tab just builds it, as a downloadable artifact.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ctrlit-lan.exe
+        shell: cmd
+        run: build.bat ci
+
+      - name: Keep the built program
+        uses: actions/upload-artifact@v4
+        with:
+          name: CtrlIt-LAN-Monitor
+          path: ctrlit-lan.exe
+
+      - name: Attach ctrlit-lan.exe to the release
+        if: github.event_name == 'release'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" ctrlit-lan.exe --clobber --repo "${{ github.repository }}"
